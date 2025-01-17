@@ -1,0 +1,8 @@
+useDynLib(MonotonicityTest, .registration=TRUE)
+importFrom(Rcpp, evalCpp)
+importFrom("graphics", "lines")
+importFrom("stats", "bw.nrd", "dnorm")
+importFrom("rlang", ".data")
+importFrom("ggplot2", "aes", "ggplot", "geom_point", "geom_line", "ggtitle", "xlab", "ylab", "scale_color_manual", "labs" )
+exportPattern("monotonicity_test")
+exportPattern("create_kernel_plot")

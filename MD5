@@ -1,0 +1,14 @@
+99a1dabe72a4eea70086b56a92e70309 *DESCRIPTION
+f8668f1922934909a93b424afddfcfb7 *NAMESPACE
+6a84a91ed5b1b90329f9e2c78ae38259 *R/MonotonicityTest-package.R
+83bfec49c36ec7e5fd5316f7e4d4303e *R/RcppExports.R
+06e7018f292cb7a877c30bbb5b2aa8e0 *R/main.R
+9067c6c57697790d099bd07bf94ed08d *README.md
+6aa7d3a466011fc1c3f41c9d3dff8350 *man/create_kernel_plot.Rd
+83622c9471e28d867e7a0f27012afb32 *man/monotonicity_test.Rd
+0e8a96d8e5c97377b4e0feaeab8dd6a9 *src/HallTest.cpp
+c89d6b95d18721894ab45341d0fbc7a6 *src/Makevars
+c89d6b95d18721894ab45341d0fbc7a6 *src/Makevars.win
+5dd2ac3177d9dcd3b88d5af7ff0f810d *src/RcppExports.cpp
+bd2f96b82bcceecfa30decfde62e83d8 *tests/testthat.R
+b51c17997578df53606b1f0d1f3a0b17 *tests/testthat/test-main.R
