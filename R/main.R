@@ -154,6 +154,11 @@ monotonicity_test <-
     t_vals <- unlist(parallel::parLapply(cl, 1:boot_num, boot_func))
     parallel::stopCluster(cl)
 
+    # Un-invert the data for our plot
+    if (negative) {
+      Y <- -Y
+    }
+
     plot <- plot_interval(X, Y, crit_interval, title = "Monotonicity Test: Critical Interval")
     p_val <- sum(t_vals >= t_stat) / length(t_vals)
 
@@ -171,10 +176,18 @@ plot_interval <- function(X, Y, interval, title) {
   plot_data <- data.frame(X = X, Y = Y)
   plot_data$InInterval <- ifelse(seq_along(X) >= interval[1] & seq_along(X) <= interval[2], "Yes", "No")
 
+  interval_data <- plot_data[plot_data$InInterval == "Yes", ]
+
+  lm_model <- lm(Y ~ X, data = interval_data)
+
+  slope <- coef(lm_model)[2]
+  intercept <- coef(lm_model)[1]
+
   plot <- ggplot(plot_data, aes(x = X, y = Y, color = .data$InInterval)) +
     geom_point(size = 2) +
+    geom_abline(slope = slope, intercept = intercept, color = "red", linetype = "dashed", linewidth=1.5) +
     scale_color_manual(values = c("No" = "black", "Yes" = "red")) +
-    labs(title = title, x = "X", y = "Y", color = "Critical Interval")
+    labs(title = paste(title, " (Slope: ", round(slope, 3), ")", sep=""), x = "X", y = "Y", color = "Critical Interval")
 
   return(plot)
 }
@@ -213,11 +226,16 @@ validate_inputs <- function(X, Y, m=NULL, monotonicity=TRUE) {
 #'
 #' @param X Vector of x values.
 #' @param Y Vector of y values.
-#' @param bandwidth Kernel bandwidth used for the Nadaraya-Watson estimator.
+#' @param bandwidth Kernel bandwidth used for the Nadaraya-Watson estimator. Can
+#'                  be a single numeric value or a vector of bandwidths.
 #'                  Default is calculated as
 #'                  \code{bw.nrd(X) * (length(X) ^ -0.1)}.
-#' @return A ggplot object containing the scatter plot with the kernel
-#'         regression curve.
+#' @param nrows Number of rows in the facet grid if multiple bandwidths are provided.
+#'              Does not do anything if only a single bandwidth value is provided.
+#'              Default is \code{4}.
+#' @return A ggplot object containing the scatter plot(s) with the kernel
+#'         regression curve(s). If a vector of bandwidths is supplied, the plots
+#'         are put into a grid using faceting.
 #' @references
 #'   Nadaraya, E. A. (1964). On estimating regression. \emph{Theory of
 #'   Probability and Its Applications}, \strong{9}(1), 141–142.
@@ -235,25 +253,55 @@ validate_inputs <- function(X, Y, m=NULL, monotonicity=TRUE) {
 #'
 #' @export
 create_kernel_plot <-
-  function(X, Y, bandwidth = bw.nrd(X) * (length(X) ^ -0.1)) {
+  function(X, Y, bandwidth = bw.nrd(X) * (length(X) ^ -0.1), nrows=4) {
     validate_inputs(X, Y, monotonicity=FALSE)
+
+    if(!is.numeric(bandwidth)) {
+      stop("'bandwidth' must be numeric value or vector")
+    }
+
+    # Check if nrows is an integer greater than zero
+    if(nrows%%1!=0 | nrows<=0) {
+      stop("'nrows' must be an integer greater than zero")
+    }
+
+    bandwidth_list <- as.list(bandwidth)
+    sorted_bandwidths <- sort(bandwidth)
 
     # Set up the range for the x-axis
     x_range <- seq(min(X), max(X), length.out = 500)
-    y_values <- watson_est(X, Y, x_range, bandwidth = bandwidth)
 
-    # Create plot
-    plot <- ggplot(data.frame(X, Y), aes(x = X, y = Y)) +
-      geom_point() +
+    # Map the bandwidths into dataframes with their respective points
+    # then concat with rbind
+    plot_data <- do.call(rbind, Map(function(bw) {
+      y_vals <- watson_est(X, Y, x_range, bandwidth = bw)
+      data.frame(x = x_range,
+                 y = y_vals,
+                 bandwidth = factor(
+                   bw,
+                   levels = sorted_bandwidths,
+                   labels = sprintf("bandwidth = %.3f", sorted_bandwidths)
+                 ))
+    }, bandwidth_list))
+
+    points_df <- data.frame(X = X, Y = Y)
+
+    # Atleast 1 column
+    n_cols <- max(ceiling(length(bandwidth_list) / nrows), 1)
+
+    # Create facet wrap / grid plot
+    plot <- ggplot() +
+      geom_point(data = points_df, aes(x = .data$X, y = .data$Y)) +
       geom_line(
-        data = data.frame(x = x_range, y = y_values),
+        data = plot_data,
         aes(x = .data$x, y = .data$y),
         color = "green",
         linewidth = 1.5
       ) +
-      ggtitle(paste("Nadaraya Watson", "bandwidth =", round(bandwidth, 4))) +
-      xlab("X") +
-      ylab("Y")
+      facet_wrap( ~ bandwidth, ncol = n_cols) +
+      labs(title = "Nadaraya Watson Kernel Regression",
+           x = "X",
+           y = "Y")
 
     return(plot)
   }
