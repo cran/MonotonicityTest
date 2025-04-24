@@ -74,10 +74,7 @@
 #' Y <- 4 * X + rnorm(500, sd = 1)
 #' result <- monotonicity_test(X, Y, boot_num = 25, seed = seed)
 #'
-#' print(result$p)
-#' print(result$stat)
-#' print(result$dist)
-#' print(result$interval)
+#' print(result)
 #'
 #' # Example 2: Usage on non-monotonic function
 #' seed <- 42
@@ -87,10 +84,7 @@
 #' Y <- (X - 0.5) ^ 2 + rnorm(500, sd = 0.5)
 #' result <- monotonicity_test(X, Y, boot_num = 25, seed = seed)
 #'
-#' print(result$p)
-#' print(result$stat)
-#' print(result$dist)
-#' print(result$interval)
+#' print(result)
 #'
 #' @export
 monotonicity_test <-
@@ -162,12 +156,14 @@ monotonicity_test <-
     plot <- plot_interval(X, Y, crit_interval, title = "Monotonicity Test: Critical Interval")
     p_val <- sum(t_vals >= t_stat) / length(t_vals)
 
-    return(list(
+    return(new_monotonicity_result(
       p = p_val,
       dist = t_vals,
       stat = t_stat,
       plot = plot,
-      interval = crit_interval
+      interval = crit_interval,
+      bandwidth=bandwidth,
+      seed = seed
     ))
   }
 
