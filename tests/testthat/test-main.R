@@ -5,22 +5,29 @@ test_that("Check monotonicity_test works for valid inputs", {
 
   boot_num <- 1
 
-  res <-
-    MonotonicityTest::monotonicity_test(X,
-                                        Y,
-                                        boot_num = boot_num,
-                                        ncores = 1)
+  res <- MonotonicityTest::monotonicity_test(
+    X,
+    Y,
+    boot_num = boot_num,
+    ncores = 1
+  )
 
-  # Check all types match
+  # Check class
   expect_s3_class(res, "monotonicity_result")
-  expect_equal(boot_num, length(res$dist))
-  expect_type(res$p, "double")
-  expect_type(res$stat, "double")
-  expect_true(is.vector(res$dist))
-  expect_true(is.vector(res$interval))
+
+  # Check lengths and types
+  expect_equal(boot_num, length(res$t_distributions))      # t_distributions is a list of length boot_num
+  expect_type(res$t_stats, "double")
+  expect_type(res$bandwidth, "double")
+  expect_true(is.numeric(res$t_stats))
+  expect_true(is.list(res$t_distributions))
+  expect_true(is.numeric(res$m_grid))
+  expect_true(is.list(res$intervals))
+
+  # Check ggplot
   expect_s3_class(res$plot, "ggplot")
 
-  # Making sure s3 methods print
+  # Check S3 methods
   expect_output(print(res))
   expect_output(summary(res))
 })
@@ -96,6 +103,27 @@ test_that("Check if create_kernel_plot generates a plot without errors", {
   # Multiple bandwidths bandwidths
   result <- create_kernel_plot(X, Y, bandwidth = c(1, 2, 3, 4))
   expect_s3_class(result, "ggplot")
+})
+
+test_that("Check if check_m runs with no errors", {
+  N <- 200
+  X <- runif(N)
+  Y <- rnorm(N)
+
+  boot_num <- 5
+
+  res <- MonotonicityTest::monotonicity_test(
+    X,
+    Y,
+    boot_num = boot_num,
+    ncores = 1,
+    check_m = TRUE
+  )
+
+  # Check class
+  expect_s3_class(res, "monotonicity_result")
+  expect_no_error(plot(res))
+  expect_no_error(summary(res))
 })
 
 test_that("Check if create_kernel_plot input validation works", {
